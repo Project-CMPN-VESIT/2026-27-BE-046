@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import time
 from typing import Any
 
 import numpy as np
@@ -30,13 +31,91 @@ DEFAULT_CHUNK_META_PATH = os.path.join(DEFAULT_DATA_DIR, "chunk_metadata.csv")
 DEFAULT_DOC_META_PATH = os.path.join(DEFAULT_DATA_DIR, "metadata.csv")
 
 
+def decompose_query(query: str) -> list[str]:
+    """Create focused retrieval intents from a compound question."""
+    normalized = re.sub(r"\s+", " ", query.strip())
+    if not normalized:
+        return []
+
+    parts = re.split(
+        r"\s+(?:ಮತ್ತು|ಹಾಗೂ)\s+|"
+        r"\s+(?:and|also|as well as)\s+"
+        r"(?=(?:how|what|which|why|where|when|can|could|ways?|factors?|"
+        r"diseases?|ರೋಗ|ಹೇಗೆ|ಏನು|ಯಾವ|ರೈತರು))",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+    parts = [part.strip(" ,;") for part in parts if part.strip(" ,;")]
+
+    # Expand a broad factor request into outcome-specific retrieval intents.
+    # The outcomes come from the user's wording; no agronomic factors are
+    # invented here.
+    factor_part = next(
+        (part for part in parts if re.search(r"\bfactor|influence|affect|depend", part, re.I)),
+        None,
+    )
+    outcomes = []
+    factor_source = factor_part or normalized
+    for term in ("flowering", "flower yield", "flower production"):
+        if re.search(rf"\b{re.escape(term)}\b", factor_source, re.IGNORECASE):
+            outcomes.append(term)
+    if "flower yield" not in outcomes and re.search(r"\byield\b", factor_source, re.I):
+        outcomes.append("yield")
+    if "flower production" not in outcomes and re.search(r"\bproduction\b", factor_source, re.I):
+        outcomes.append("production")
+    if factor_part and len(outcomes) > 1:
+        subject_match = re.search(r"\bin\s+(.+?)(?:\?|$)", factor_part, re.IGNORECASE)
+        subject = subject_match.group(1).strip(" ,") if subject_match else "jasmine"
+        factor_intents = [
+            f"Factors affecting {outcome} in {subject or 'jasmine'}"
+            for outcome in outcomes
+        ]
+        parts = factor_intents + [
+            part for part in parts if part != factor_part
+        ]
+
+    # Resolve a management follow-up such as "how can they be managed?" to
+    # the domain named in the preceding intent.
+    if len(parts) > 1 and re.search(r"\bmanaged|manage|improve|improving\b", parts[-1], re.I):
+        preceding = " ".join(parts[:-1])
+        if re.search(r"\bdisease|pest|nutrition|irrigation|pruning|fertiliz|fertiliser|nutrient|nitrogen|phosphorus|potassium|npk|manure\b", preceding, re.I):
+            parts[-1] = re.sub(
+                r"^(?:how\s+)?can\s+(?:they|it)\s+be\s+(?:managed|improved)\??$",
+                lambda _: f"Management practices for {re.sub(r'^what\s+', '', preceding.rstrip('?'), flags=re.I)}",
+                parts[-1],
+                flags=re.IGNORECASE,
+            )
+        if re.match(r"^how\s+can\s+(?:farmers?|growers?)\s+improv", parts[-1], re.I):
+            subject_match = re.search(r"\bin\s+([A-Za-z]+)", normalized, re.IGNORECASE)
+            subject = subject_match.group(1).strip(" ,") if subject_match else "jasmine"
+            parts[-1] = re.sub(
+                r"^how\s+can\s+(?:farmers?|growers?)\s+",
+                "Practices or treatments reported to ",
+                parts[-1],
+                flags=re.IGNORECASE,
+            )
+            parts[-1] = f"{parts[-1].rstrip('?')} in {subject}"
+    elif len(parts) > 1 and re.search(r"\bimprov(?:e|es|ing)\b", parts[-1], re.I):
+        subject_match = re.search(r"\bin\s+([A-Za-z]+)", normalized, re.IGNORECASE)
+        subject = subject_match.group(1).strip(" ,") if subject_match else "jasmine"
+        parts[-1] = re.sub(
+            r"^(?:how\s+can\s+)?(?:farmers?|growers?)\s+",
+            "Practices or treatments reported to ",
+            parts[-1],
+            flags=re.IGNORECASE,
+        )
+        parts[-1] = f"{parts[-1].rstrip('?')} in {subject}"
+
+    return list(dict.fromkeys(parts)) if parts else [normalized]
+
+
 def detect_category(query: str) -> str | None:
     """Auto category detection matching the original Colab notebook."""
     q = query.lower()
 
-    if any(x in q for x in ["pruning", "off season", "flowering", "bloom", "defoliation", "paclobutrazol"]):
+    if any(x in q for x in ["pruning", "off season", "defoliation", "paclobutrazol"]):
         return "Pruning"
-    elif any(x in q for x in ["fertilizer", "fertigation", "npk", "micronutrient", "nutrient", "manure"]):
+    elif any(x in q for x in ["fertilizer", "fertiliser", "fertiliz", "fertilis", "fertigation", "npk", "micronutrient", "nutrient", "manure", "nitrogen", "phosphorus", "potassium", "urea"]):
         return "Nutrition"
     elif any(x in q for x in ["drip", "irrigation", "water", "soil moisture", "water stress"]):
         return "Irrigation"
@@ -52,6 +131,47 @@ def detect_category(query: str) -> str | None:
         return "PostHarvest"
 
     return None
+
+
+def _has_unambiguous_query_signal(query: str, results: pd.DataFrame) -> bool:
+    """Avoid treating unrelated nearest neighbours as evidence.
+
+    This is an evidence validation check, not a similarity threshold: it only
+    applies when no known domain category was detected.
+    """
+    stop_words = {
+        "what", "which", "where", "when", "does", "this", "that", "with",
+        "from", "about", "into", "for", "the", "and", "how", "can", "are",
+        "is", "in", "on", "of", "to", "a", "an", "jasmine",
+    }
+    query_terms = {
+        token for token in re.findall(r"[a-z]{4,}", query.lower())
+        if token not in stop_words
+    }
+    if not query_terms:
+        return True
+    corpus_text = " ".join(
+        results.get("text", pd.Series(dtype=str)).fillna("").astype(str).tolist()
+        + results.get("category", pd.Series(dtype=str)).fillna("").astype(str).tolist()
+    ).lower()
+    return any(re.search(rf"\b{re.escape(term)}\b", corpus_text) for term in query_terms)
+
+
+def _evidence_relation(query: str, row: pd.Series) -> str:
+    """Classify a chunk by topic overlap, without treating similarity as proof."""
+    stop_words = {
+        "what", "which", "where", "when", "does", "this", "that", "with",
+        "from", "about", "into", "for", "the", "and", "how", "can", "are",
+        "is", "in", "on", "of", "to", "a", "an", "factors", "affecting",
+    }
+    terms = {
+        token for token in re.findall(r"[a-z]{4,}", query.lower())
+        if token not in stop_words and token != "jasmine"
+    }
+    searchable = " ".join(
+        str(row.get(column, "")) for column in ("text", "filename", "category")
+    ).lower()
+    return "DIRECT_EVIDENCE" if any(term in searchable for term in terms) else "RELATED_EVIDENCE"
 
 
 KNOWN_TITLES = {
@@ -149,12 +269,15 @@ class GeneralRAG:
         category = detect_category(query)
 
         # 1. Encode query with normalized embeddings
+        t0 = time.perf_counter()
         q_emb = self.embedder.encode([query], normalize_embeddings=True)
         q_emb = np.array(q_emb).astype("float32")
+        t_emb = time.perf_counter()
 
         # 2. Search candidate pool in FAISS index
         candidate_k = min(len(self.chunks_df), max(top_k * 8, 40))
         scores, ids = self.index.search(q_emb, candidate_k)
+        t_search = time.perf_counter()
 
         valid_indices = [idx for idx in ids[0] if 0 <= idx < len(self.chunks_df)]
         valid_scores = [scores[0][i] for i, idx in enumerate(ids[0]) if 0 <= idx < len(self.chunks_df)]
@@ -162,6 +285,30 @@ class GeneralRAG:
         results = self.chunks_df.iloc[valid_indices].copy()
         results["score"] = valid_scores
         results["is_cross_species"] = False
+
+        retrieval_metrics = {
+            "pipeline": "general_faiss",
+            "embedding_model": EMBED_MODEL_NAME,
+            "score_metric": "Cosine Similarity (FAISS IndexFlatIP)",
+            "candidate_k": candidate_k,
+            "initial_candidate_count": len(valid_indices),
+            "embedding_latency_ms": round((t_emb - t0) * 1000, 2),
+            "vector_search_latency_ms": round((t_search - t_emb) * 1000, 2),
+            "total_retrieval_latency_ms": round((t_search - t0) * 1000, 2),
+        }
+
+        if category is None and not _has_unambiguous_query_signal(query, results):
+            return {
+                "route": "GENERAL_RAG",
+                "top_score": 0.0,
+                "target_species": species,
+                "category": category,
+                "direct_evidence_found": False,
+                "cross_species_used": False,
+                "status_message": "No evidence matched the subject of the question.",
+                "chunks": [],
+                "retrieval_metrics": retrieval_metrics,
+            }
 
         # 3. Target species filter
         direct_evidence_found = False
@@ -255,10 +402,7 @@ class GeneralRAG:
         chunks: list[dict[str, Any]] = []
         for _, r in top.iterrows():
             filename_str = str(r["filename"])
-            title_str = KNOWN_TITLES.get(
-                filename_str,
-                filename_str.rsplit(".pdf", 1)[0].replace("_", " ").strip() if filename_str.endswith(".pdf") else filename_str
-            )
+            title_str = KNOWN_TITLES.get(filename_str)
 
             year_val = None
             year_match = re.search(r"\b(19\d{2}|20\d{2})\b", filename_str)
@@ -292,6 +436,7 @@ class GeneralRAG:
                 "source": str(r["source"]) if pd.notna(r.get("source")) else "KrishiKosh",
                 "filename": filename_str,
                 "page": None,
+                "evidence_relation": _evidence_relation(query, r),
             })
 
         return {
@@ -303,5 +448,121 @@ class GeneralRAG:
             "cross_species_used": cross_species_used,
             "status_message": status_message,
             "chunks": chunks,
+            "retrieval_metrics": retrieval_metrics,
         }
 
+    def retrieve_multi_query(
+        self,
+        query: str,
+        top_k: int = TOP_K,
+        species: str = "Jasminum sambac",
+        allow_cross_species: bool = False,
+    ) -> dict[str, Any]:
+        """Decompose a query and retrieve a separate evidence packet per part."""
+        sub_questions = decompose_query(query)
+        packets: list[dict[str, Any]] = []
+        all_chunks: list[dict[str, Any]] = []
+
+        if os.getenv("RAG_DEBUG_RETRIEVAL") == "1":
+            logger.info("[ORIGINAL QUERY] %s", query)
+            logger.info("[DECOMPOSED QUESTIONS] %s", sub_questions)
+
+        for index, sub_question in enumerate(sub_questions, 1):
+            if os.getenv("RAG_DEBUG_RETRIEVAL") == "1":
+                logger.info("[RETRIEVAL QUERY FOR SUBQUESTION %s] %s", index, sub_question)
+            result = self.retrieve(
+                sub_question,
+                top_k=top_k,
+                species=species,
+                allow_cross_species=allow_cross_species,
+            )
+            if any(
+                chunk.get("evidence_relation") == "DIRECT_EVIDENCE"
+                for chunk in result["chunks"]
+            ):
+                evidence_status = "DIRECT_EVIDENCE"
+                evidence_message = "Direct evidence was retrieved for this sub-question."
+            elif result["chunks"]:
+                evidence_status = "RELATED_EVIDENCE"
+                evidence_message = "Only related or cross-species evidence was retrieved for this sub-question."
+            else:
+                evidence_status = "INSUFFICIENT_EVIDENCE"
+                evidence_message = (
+                    "The current JasmineGPT knowledge base does not contain sufficient "
+                    "evidence to answer this specific part."
+                )
+
+            # Keep the strongest chunk for each source document in this packet.
+            packet_chunks = [
+                {**chunk, "sub_question_id": f"q{index}"}
+                for chunk in sorted(
+                    result["chunks"],
+                    key=lambda chunk: float(chunk.get("score", 0.0)),
+                    reverse=True,
+                )
+            ]
+            packet_chunks = list({
+                chunk["filename"]: chunk for chunk in packet_chunks
+            }.values())
+            if os.getenv("RAG_DEBUG_RETRIEVAL") == "1":
+                for chunk in packet_chunks:
+                    logger.info(
+                        "[RETRIEVED DOCUMENT ID] %s [%s] %s "
+                        "[SOURCE] %s [CATEGORY] %s [SCORE] %.4f [SELECTED] yes [REASON] "
+                        "top source for intent",
+                        chunk["chunk_id"],
+                        "DOCUMENT TITLE" if chunk.get("title") else "SOURCE DOCUMENT",
+                        chunk.get("title") or chunk["filename"],
+                        chunk.get("source"), chunk.get("category"),
+                        float(chunk.get("score", 0.0)),
+                    )
+            all_chunks.extend(packet_chunks)
+            packets.append({
+                "id": f"q{index}",
+                "question": sub_question,
+                "evidence_status": evidence_status,
+                "evidence_message": evidence_message,
+                "top_score": result["top_score"],
+                "chunks": packet_chunks,
+            })
+
+        total_candidates = sum(
+            p.get("chunks", []) and len(p.get("chunks", [])) or 0 for p in packets
+        )
+        embedding_time_total = sum(
+            p.get("retrieval_metrics", {}).get("embedding_latency_ms", 0.0) for p in packets
+        )
+        search_time_total = sum(
+            p.get("retrieval_metrics", {}).get("vector_search_latency_ms", 0.0) for p in packets
+        )
+        retrieval_time_total = sum(
+            p.get("retrieval_metrics", {}).get("total_retrieval_latency_ms", 0.0) for p in packets
+        )
+
+        return {
+            "route": "GENERAL_RAG",
+            "query": query,
+            "is_multi_query": len(sub_questions) > 1,
+            "sub_questions": packets,
+            # Keep the legacy fields populated for existing clients.
+            "chunks": all_chunks,
+            "top_score": max((p["top_score"] for p in packets), default=0.0),
+            "target_species": species,
+            "direct_evidence_found": any(
+                p["evidence_status"] == "DIRECT_EVIDENCE" for p in packets
+            ),
+            "cross_species_used": any(
+                any(c.get("is_cross_species") for c in p["chunks"]) for p in packets
+            ),
+            "status_message": "Evidence retrieved independently for each sub-question.",
+            "retrieval_metrics": {
+                "pipeline": "general_faiss",
+                "embedding_model": EMBED_MODEL_NAME,
+                "score_metric": "Cosine Similarity (FAISS IndexFlatIP)",
+                "sub_questions_count": len(sub_questions),
+                "initial_candidate_count": sum(p.get("retrieval_metrics", {}).get("initial_candidate_count", 0) for p in packets),
+                "embedding_latency_ms": round(embedding_time_total, 2),
+                "vector_search_latency_ms": round(search_time_total, 2),
+                "total_retrieval_latency_ms": round(retrieval_time_total, 2),
+            },
+        }

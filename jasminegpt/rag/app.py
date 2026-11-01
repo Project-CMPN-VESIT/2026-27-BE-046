@@ -140,7 +140,7 @@ async def general_retrieve(req: QueryRequest):
         if not species:
             species = "Jasminum sambac"
 
-        result = general_rag.retrieve(
+        result = general_rag.retrieve_multi_query(
             req.query,
             top_k=req.top_k,
             species=species,

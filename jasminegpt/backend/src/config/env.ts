@@ -13,9 +13,12 @@ const envSchema = z.object({
 
   RAG_SIDECAR_URL: z.string().default('http://localhost:8000'),
 
+  LLM_PROVIDER: z.enum(['openrouter', 'gemini']).default('openrouter'),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_MODEL: z.string().default('openai/gpt-4o-mini'),
   OPENROUTER_BASE_URL: z.string().default('https://openrouter.ai/api/v1'),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   LOG_LEVEL: z.string().default('info'),

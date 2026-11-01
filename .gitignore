@@ -55,3 +55,8 @@ Thumbs.db
 .vscode/settings.json
 .vscode/tasks.json
 .vscode/launch.json
+# -----------------------------
+# Evaluation logs (runtime query data — not committed)
+# -----------------------------
+evaluation/logs/
+evaluation/reports/

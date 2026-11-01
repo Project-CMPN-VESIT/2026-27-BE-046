@@ -23,5 +23,5 @@ export const Errors = {
   CONVERSATION_NOT_FOUND: (id: string) =>
     new AppError('CONVERSATION_NOT_FOUND', `Conversation not found: ${id}`, 404),
   MISSING_API_KEY: () =>
-    new AppError('MISSING_API_KEY', 'OpenRouter API key is not configured. Set OPENROUTER_API_KEY in .env.', 503),
+    new AppError('MISSING_API_KEY', 'The configured LLM provider API key is not configured. Set the provider-specific key in .env.', 503),
 };

@@ -70,6 +70,29 @@ cd rag
 uvicorn app:app --reload --port 8000
 ```
 
+### Quantitative Evaluation
+
+The backend records one JSON evaluation record per handled query by default. Runtime
+records are written under `evaluation/logs/`, and generated reports under
+`evaluation/reports/` (both locations are ignored by Git). Set `EVAL_DIR` to use a
+different location.
+
+Run the six canonical queries with the live RAG sidecar and configured LLM:
+
+```bash
+cd backend
+npm run eval:canonical
+```
+
+Generate CSV tables and an aggregate JSON/Markdown report from existing records:
+
+```bash
+npm run eval:report
+```
+
+Metrics use provider-reported token usage when available; unavailable values are
+reported as `N/A` rather than estimated.
+
 ---
 
 ## 🌍 Multilingual Example

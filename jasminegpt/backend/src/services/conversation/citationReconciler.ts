@@ -26,6 +26,34 @@ export function isSourceReferenced(source: SourceDoc, content: string): boolean 
   if (!content) return false;
   const normContent = normalizeText(content);
 
+  // Structured general answers carry claim-level source IDs instead of
+  // repeating paper titles in the farmer-facing text.
+  try {
+    const structured = JSON.parse(content) as {
+      research_findings?: Array<{ source_ids?: string[] }>;
+      farmer_guidance?: Array<{ source_ids?: string[] }>;
+      factors?: Array<{ source_ids?: string[] }>;
+      farmer_actions?: Array<{ source_ids?: string[] }>;
+      supporting_evidence?: Array<{ source_id?: string }>;
+    };
+    const structuredIds = [
+      ...(structured.research_findings || []).flatMap((item) => item.source_ids || []),
+      ...(structured.farmer_guidance || []).flatMap((item) => item.source_ids || []),
+      ...(structured.factors || []).flatMap((item) => item.source_ids || []),
+      ...(structured.farmer_actions || []).flatMap((item) => item.source_ids || []),
+      ...(structured.supporting_evidence || []).map((item) => item.source_id || ''),
+    ].map(normalizeText);
+    if (structuredIds.some((id) =>
+      id && (
+        id === normalizeText(source.documentId) ||
+        id === normalizeText(source.title) ||
+        normalizeText(source.title).includes(id)
+      ),
+    )) return true;
+  } catch {
+    // Non-JSON responses use the existing title/author matching below.
+  }
+
   // 1. Check Document ID (e.g. "JAS-SAM-001", "JAS-AUR-001")
   if (source.documentId && source.documentId.length >= 3) {
     const normDocId = normalizeText(source.documentId);
@@ -97,6 +125,60 @@ export function extractEvidenceStudies(content: string): string[] {
   return studies;
 }
 
+function splitResearchCitations(content: string): {
+  answerBody: string;
+  heading: string;
+  section: string;
+  suffix: string;
+} {
+  const match = content.match(/(^|\n)(###?\s*Research Citations\b[^\n]*)([\s\S]*?)(?=\n###?\s+|\s*$)/i);
+  if (!match || match.index === undefined) {
+    return { answerBody: content, heading: '', section: '', suffix: '' };
+  }
+
+  const start = match.index + (match[1] ? match[1].length : 0);
+  const end = start + match[2].length + match[3].length;
+  return {
+    answerBody: `${content.slice(0, start)}${content.slice(end)}`,
+    heading: match[2],
+    section: match[3],
+    suffix: content.slice(end),
+  };
+}
+
+function farmerFacingContent(content: string): string {
+  const markerIndex = content.indexOf('🔎 View supporting evidence');
+  return markerIndex >= 0 ? content.slice(0, markerIndex) : content;
+}
+
+function sourceMatchesCitationLine(source: SourceDoc, line: string): boolean {
+  const normalizedLine = normalizeText(line);
+  const candidates = [source.documentId, source.title].filter(Boolean);
+  return candidates.some((candidate) => {
+    const normalizedCandidate = normalizeText(candidate);
+    return normalizedCandidate.length >= 3 && normalizedLine.includes(normalizedCandidate);
+  });
+}
+
+function rewriteResearchCitations(
+  content: string,
+  referencedSources: SourceDoc[],
+): string {
+  const split = splitResearchCitations(content);
+  if (!split.heading) return content;
+
+  const retainedLines = split.section
+    .split('\n')
+    .filter((line) => line.trim() && referencedSources.some((source) => sourceMatchesCitationLine(source, line)));
+
+  const citationLines = retainedLines.length > 0
+    ? retainedLines
+    : referencedSources.map((source) => `- [${source.title}]`);
+  const citationSection = `${split.heading}\n${citationLines.join('\n')}`;
+
+  return `${split.answerBody.trimEnd()}\n\n${citationSection}${split.suffix}`;
+}
+
 /**
  * Reconciles Sources and Evidence to guarantee a strict 1:1 mapping:
  * - Keeps only candidate sources that are actually summarized in the response.
@@ -125,7 +207,13 @@ export function reconcileSourcesAndEvidence(
     };
   }
 
-  // Match each candidate source against the response text
+  // Ignore the citation list while determining whether a source supports
+  // content in the answer. Otherwise a source can validate itself merely by
+  // appearing in "Research Citations".
+  const { answerBody } = splitResearchCitations(assistantContent);
+  const farmerAnswer = farmerFacingContent(answerBody);
+
+  // Match each candidate source against the answer body
   const referencedSources: SourceDoc[] = [];
   const seenSourceKeys = new Set<string>();
 
@@ -133,17 +221,17 @@ export function reconcileSourcesAndEvidence(
     const sourceKey = source.documentId || source.title;
     if (seenSourceKeys.has(sourceKey)) continue;
 
-    if (isSourceReferenced(source, assistantContent)) {
+    if (isSourceReferenced(source, farmerAnswer)) {
       referencedSources.push(source);
       seenSourceKeys.add(sourceKey);
     }
   }
 
-  const evidenceStudies = extractEvidenceStudies(assistantContent);
+  const evidenceStudies = extractEvidenceStudies(answerBody);
   const evidenceCount = evidenceStudies.length > 0 ? evidenceStudies.length : referencedSources.length;
 
   return {
-    reconciledContent: assistantContent,
+    reconciledContent: rewriteResearchCitations(assistantContent, referencedSources),
     reconciledSources: referencedSources,
     evidenceCount,
     sourceCount: referencedSources.length,

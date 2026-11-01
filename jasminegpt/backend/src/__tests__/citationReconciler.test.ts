@@ -108,4 +108,45 @@ These findings apply strictly to the specific post-harvest treatments, packaging
     expect(result.sourceCount).toBe(0);
     expect(result.reconciledSources.length).toBe(0);
   });
+
+  test('research citations include only sources used outside the citation section', () => {
+    const content = `
+### 1. Direct Answer
+The packaging treatment in the first study extended freshness.
+
+### 2. Evidence from Retrieved Studies
+- **Paper Title**: Packaging technology for export of jasmine (Jasminum sambac Ait.) flowers
+- **Key Finding**: The treatment maintained freshness for 42.88 hours.
+
+### Research Citations
+- [Packaging technology for export of jasmine (Jasminum sambac Ait.) flowers]
+- [Packaging Technology for Extending Shelf Life of Jasmine (Jasminum sambac CV. Gundumalli) Flowers]
+- [Edible Coating of Chitosan and Packaging Types to Maintain Quality of Jasmine Flower]
+`;
+    const result = reconcileSourcesAndEvidence(content, [source1, source2, source3]);
+
+    expect(result.reconciledSources).toEqual([source1]);
+    expect(result.reconciledContent).toContain('[Packaging technology for export of jasmine');
+    expect(result.reconciledContent).not.toContain('[Packaging Technology for Extending Shelf Life');
+    expect(result.reconciledContent).not.toContain('[Edible Coating of Chitosan');
+  });
+
+  test('supporting evidence sources do not become farmer-facing citations', () => {
+    const content = `
+🌸 Flower production was higher in the first study [${source1.title}].
+
+🔎 View supporting evidence
+### 2. Evidence from Retrieved Studies
+- **Paper Title**: ${source2.title}
+- **Key Finding**: Detailed supporting measurements.
+
+### Research Citations
+- [${source1.title}]
+- [${source2.title}]
+`;
+    const result = reconcileSourcesAndEvidence(content, [source1, source2]);
+
+    expect(result.reconciledSources).toEqual([source1]);
+    expect(result.reconciledContent).not.toContain(`- [${source2.title}]`);
+  });
 });

@@ -26,7 +26,7 @@ export const MANAGEMENT_TOPICS: ManagementTopic[] = [
       /\b(?:fertiliz|fertiliser|nutrient|nutrition|inm\b|npk\b|fym\b|manure|compost|vermicompost|biofertiliz|bio-fertiliz|micronutrient|panchagavya|humic acid|fertigation|foliar nutrition|foliar feed|foliar spray of nutrient|azospirillum|phosphobacteria|soil fertility|nitrogen|phosphorus|potassium|nutrient scheduling)\b/i,
     ],
     evaluationPatterns: [
-      /\b(?:fertiliz|fertiliser|nutrient|nutrition|inm\b|npk\b|fym\b|manure|compost|vermicompost|biofertiliz|bio-fertiliz|micronutrient|panchagavya|humic acid|fertigation|foliar nutrition|foliar feed|foliar spray of (?:npk|zinc|boron|iron|urea|micronutrient)|azospirillum|phosphobacteria|potassium solubilizing|organic manure|nitrogen application|phosphorus application|potassium application|zinc sulphate|borax|ferrous sulphate|cow dung|farmyard manure|nutrient scheduling)\b/i,
+      /\b(?:fertiliz|fertiliser|nutrient|nutrients|nutrition|inm\b|npk\b|fym\b|manure|compost|vermicompost|biofertiliz|bio-fertiliz|micronutrient|micronutrients|panchagavya|humic acid|fertigation|foliar nutrition|foliar feed|foliar spray of (?:npk|zinc|boron|iron|urea|micronutrient)|azospirillum|phosphobacteria|potassium solubilizing|organic manure|nitrogen|phosphorus|potassium|urea\b|zinc sulphate|borax|ferrous sulphate|cow dung|farmyard manure|nutrient scheduling)\b/i,
     ],
   },
   {

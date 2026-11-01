@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import time
 from typing import Any
 
 import numpy as np
@@ -154,7 +155,7 @@ class PostHarvestRAG:
         df = df[df["document_id"].isin(allowed_docs)].copy()
         top = df.sort_values("hybrid_score", ascending=False).head(top_k)
         return top[
-            ["chunk_id", "document_id", "page", "hybrid_score", "text"]
+            ["chunk_id", "document_id", "page", "hybrid_score", "semantic_score", "lexical_score", "text"]
         ].to_dict(orient="records")
 
     def _build_evidence_packet(self, query: str, route: dict) -> dict:
@@ -235,9 +236,32 @@ class PostHarvestRAG:
           species, domains, concepts, temperatures, question_type
         """
         assert self._ready, "Call initialize() first"
+        t0 = time.perf_counter()
         route = route_postharvest_query(query)
         packet = self._build_evidence_packet(query, route)
         evidence = self._validate_evidence(route, packet)
+        t_end = time.perf_counter()
+        selected_docs = route.get("selected_docs", [])
+        candidate_pool_count = (
+            int(self.chunks_df["document_id"].isin(selected_docs).sum())
+            if self.chunks_df is not None
+            else 0
+        )
+
+        retrieval_metrics = {
+            "pipeline": "postharvest_hybrid",
+            "embedding_model": EMBED_MODEL_NAME,
+            "score_metric": "Hybrid Score (0.65 * Semantic + 0.35 * TF-IDF Lexical)",
+            "semantic_weight": SEMANTIC_WEIGHT,
+            "lexical_weight": LEXICAL_WEIGHT,
+            "total_chunks_in_corpus": len(self.chunks_df) if self.chunks_df is not None else 0,
+            "routed_docs_count": len(route.get("selected_docs", [])),
+            "semantic_candidate_count": candidate_pool_count,
+            "lexical_candidate_count": candidate_pool_count,
+            "candidate_chunks": candidate_pool_count,
+            "selected_chunks": min(len(packet["chunks"]), 5),
+            "retrieval_latency_ms": round((t_end - t0) * 1000, 2),
+        }
 
         return {
             "route_status": route["status"],
@@ -255,4 +279,5 @@ class PostHarvestRAG:
             "profile_facts": packet["profile_facts"],
             "reason": route.get("reason", ""),
             "evidence_message": evidence.get("message", ""),
+            "retrieval_metrics": retrieval_metrics,
         }
