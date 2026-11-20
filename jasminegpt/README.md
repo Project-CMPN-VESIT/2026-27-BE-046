@@ -1,136 +1,58 @@
-# 🌸 JasmineGPT
+# JasmineGPT application
 
-### An Evidence-Grounded Multilingual RAG Chatbot for Jasmine Farmers
+The complete setup and operating guide is in the repository
+[README.md](../README.md).
 
-JasmineGPT is an AI-powered agricultural assistant developed to help **Jasminum sambac** farmers make informed cultivation decisions using **Retrieval-Augmented Generation (RAG)**. The chatbot provides reliable, research-backed answers with multilingual support in **English and Kannada**, conversational memory, and evidence-based citations.
+This directory contains the three JasmineGPT runtime services and the copied
+Official Agricultural Web Retrieval feature.
 
----
+| Directory | Service | Default URL |
+| --- | --- | --- |
+| `frontend/` | React + Vite web client | `http://localhost:5173` |
+| `backend/` | Express + TypeScript API | `http://localhost:4000` |
+| `rag/` | FastAPI retrieval sidecar | `http://localhost:8000` |
 
-## ✨ Features
+For local development, configure `backend/.env`,
+`features/official-agricultural/backend/.env`, and optionally
+`frontend/.env.local`. Install the `backend`/`frontend` npm dependencies and
+both Python environments, then start MongoDB and the three application
+services.
 
-* 🌱 **Evidence-Grounded RAG** – Answers generated only from retrieved research papers.
-* 🌐 **Multilingual Support** – Automatic English ↔ Kannada input and output.
-* 💬 **Conversational Memory** – Remembers crop context during the current session.
-* 📖 **Research-Based Q&A** – Cultivation, pruning, irrigation, nutrition, storage, and packaging.
-* 📑 **Evidence Citations** – Every response is supported by the retrieved research.
-* 🚫 **No Hallucinated Recommendations** – Clearly distinguishes direct evidence from related evidence.
+## Official Agricultural Web Retrieval
 
----
-
-## 🏗️ Tech Stack
-
-| Layer           | Technology                |
-| --------------- | ------------------------- |
-| Frontend        | React + Vite + TypeScript |
-| Backend         | Express + TypeScript      |
-| RAG Service     | FastAPI + Python          |
-| Vector Database | ChromaDB                  |
-| Framework       | LangChain                 |
-| LLM             | Gemini                    |
-| Languages       | English, Kannada          |
-
----
-
-## 📂 Project Structure
+The frontend includes an **Official Agricultural Web Retrieval** sidebar item.
+It opens a full-page search view backed by the copied feature service:
 
 ```text
-jasminegpt/
-├── frontend/        # React + Vite UI
-├── backend/         # Express API
-├── rag/             # FastAPI RAG Service
-├── README.md
-└── .gitignore
+jasminegpt\features\official-agricultural
 ```
 
----
+The official service runs on port `8100`, because port `8000` is already used
+by this repository's research RAG sidecar. The browser does not need a
+separate official-service URL; configure only the main API in
+`frontend/.env.local`:
 
-## 🚀 Getting Started
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
+```dotenv
+# The frontend uses the main JasmineGPT API for both features.
+VITE_API_BASE_URL=http://localhost:4000
 ```
 
-### Backend
+Set up the copied backend once, then start it in another PowerShell window:
 
-```bash
-cd backend
-npm install
-npm run dev
+```powershell
+cd jasminegpt\features\official-agricultural\backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install pytest
+Copy-Item .env.example .env
+.\start_official.ps1
 ```
 
-### RAG Service
+Check that it is available at `http://127.0.0.1:8100/health`. The main
+JasmineGPT backend proxies the feature through
+`/api/official-agricultural/*`. Its MongoDB, ChromaDB, crawler, and data remain
+separate from JasmineGPT. Enter credentials manually in the copied feature's
+`.env`; never copy the source project's real `.env`.
 
-```bash
-cd rag
-.venv\Scripts\activate
-uvicorn app:app --reload --port 8000
-```
-
-### Quantitative Evaluation
-
-The backend records one JSON evaluation record per handled query by default. Runtime
-records are written under `evaluation/logs/`, and generated reports under
-`evaluation/reports/` (both locations are ignored by Git). Set `EVAL_DIR` to use a
-different location.
-
-Run the six canonical queries with the live RAG sidecar and configured LLM:
-
-```bash
-cd backend
-npm run eval:canonical
-```
-
-Generate CSV tables and an aggregate JSON/Markdown report from existing records:
-
-```bash
-npm run eval:report
-```
-
-Metrics use provider-reported token usage when available; unavailable values are
-reported as `N/A` rather than estimated.
-
----
-
-## 🌍 Multilingual Example
-
-**Kannada Input**
-
-> ಮಲ್ಲಿಗೆಗೆ ಹೂ ಬಿಡುವಿಕೆ ಹೆಚ್ಚಿಸಲು ಯಾವ ಗೊಬ್ಬರ ವಿಧಾನವನ್ನು ಸಂಶೋಧನೆಯಲ್ಲಿ ಪರೀಕ್ಷಿಸಲಾಗಿದೆ?
-
-**JasmineGPT**
-
-* Detects Kannada automatically
-* Retrieves English research papers
-* Generates an evidence-grounded response
-* Returns the answer in Kannada while preserving English paper citations
-
----
-
-## 🎯 Research Scope
-
-JasmineGPT currently supports:
-
-* Fertilizer & Nutrient Management
-* Pruning & Flowering
-* Irrigation Management
-* Post-Harvest Storage
-* Packaging Technology
-* Shelf-Life Management
-
----
-
-## 🔒 Evidence Policy
-
-JasmineGPT answers **only from retrieved research evidence**. If no direct evidence exists, it explicitly states the evidence gap instead of generating unsupported recommendations.
-
----
-
-## 👩‍💻 Author
-
-**Akansha Zambare**
-
-**Final Year B.E. Project** — An intelligent multilingual decision-support chatbot for jasmine farmers using Retrieval-Augmented Generation (RAG).
+See the parent [README.md](../README.md) for the complete setup sequence,
+environment-variable reference, health checks, tests, and troubleshooting.

@@ -16,6 +16,12 @@ export const Errors = {
   INTERNAL: (msg: string) => new AppError('INTERNAL_ERROR', msg, 500),
   RAG_UNAVAILABLE: () =>
     new AppError('RAG_UNAVAILABLE', 'RAG sidecar is not available. Please start the Python RAG service on port 8000.', 503),
+  OFFICIAL_AGRICULTURAL_UNAVAILABLE: () =>
+    new AppError(
+      'OFFICIAL_AGRICULTURAL_UNAVAILABLE',
+      'Official agricultural retrieval service is unavailable. Start the feature service on port 8100.',
+      503,
+    ),
   LLM_UNAVAILABLE: () =>
     new AppError('LLM_UNAVAILABLE', 'LLM service is temporarily unavailable.', 503),
   MONGO_UNAVAILABLE: () =>

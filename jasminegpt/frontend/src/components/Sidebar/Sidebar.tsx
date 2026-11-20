@@ -1,5 +1,5 @@
 import type { Conversation } from '../../types';
-import { Plus, MessageSquare, Trash2, PanelLeft } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, PanelLeft, Landmark } from 'lucide-react';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -8,6 +8,8 @@ interface SidebarProps {
   onSelect: (id: string) => void;
   onCreate: () => void;
   onDelete: (id: string) => void;
+  onOfficialRetrieval: () => void;
+  officialRetrievalActive?: boolean;
   /** Desktop: collapsed to 72 px icon-rail */
   collapsed?: boolean;
   /** Called when the sidebar toggle icon is clicked */
@@ -49,6 +51,8 @@ export default function Sidebar({
   onSelect,
   onCreate,
   onDelete,
+  onOfficialRetrieval,
+  officialRetrievalActive = false,
   collapsed = false,
   onToggle,
 }: SidebarProps) {
@@ -92,6 +96,20 @@ export default function Sidebar({
         </button>
 
         <div className="w-8 border-t border-[var(--border)] my-2" />
+
+        <button
+          type="button"
+          onClick={onOfficialRetrieval}
+          title="Official Agricultural Web Retrieval"
+          aria-label="Official Agricultural Web Retrieval"
+          className={`${iconBtnBase} w-10 h-10 ${
+            officialRetrievalActive
+              ? 'bg-[var(--bg-surface-active)] border border-[var(--border)] text-emerald-400'
+              : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]'
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+        </button>
 
         {/* Conversation icons */}
         <div className="flex-1 overflow-y-auto w-full flex flex-col items-center gap-1 px-1">
@@ -164,6 +182,21 @@ export default function Sidebar({
             <span>New Chat</span>
           </div>
           <span className="text-xs text-[var(--text-muted)] font-mono">⌘N</span>
+        </button>
+      </div>
+
+      <div className="px-3 pb-2.5">
+        <button
+          type="button"
+          onClick={onOfficialRetrieval}
+          className={`w-full flex items-center gap-2 rounded-2xl border px-3.5 py-2.5 text-left text-sm transition ${
+            officialRetrievalActive
+              ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300'
+              : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]'
+          }`}
+        >
+          <Landmark className="h-4 w-4 flex-shrink-0" />
+          <span className="truncate">Official Agricultural Web Retrieval</span>
         </button>
       </div>
 

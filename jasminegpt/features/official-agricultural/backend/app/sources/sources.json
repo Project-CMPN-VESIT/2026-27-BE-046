@@ -1,0 +1,222 @@
+[
+  {
+    "name": "ICAR-IIHR Bangalore - Horticulture Research",
+    "url": "https://iihr.res.in/",
+    "source_url": "https://iihr.res.in/",
+    "category": "jasmine_crop_practice",
+    "topics": ["jasmine", "floriculture", "ICAR", "horticulture research", "crop advisory", "planting material"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "TNAU Agritech Portal",
+    "url": "https://agritech.tnau.ac.in/",
+    "source_url": "https://agritech.tnau.ac.in/",
+    "category": "jasmine_crop_practice",
+    "topics": ["jasmine", "horticulture", "floriculture", "cultivation", "TNAU", "Tamil Nadu"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "National Horticulture Board",
+    "url": "https://nhb.gov.in/",
+    "source_url": "https://nhb.gov.in/",
+    "category": "floriculture_subsidy",
+    "topics": ["floriculture", "subsidy", "jasmine", "NHB", "area expansion", "loose flowers", "horticulture scheme"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "MyScheme - Government Scheme Portal",
+    "url": "https://www.myscheme.gov.in/",
+    "source_url": "https://www.myscheme.gov.in/",
+    "category": "floriculture_subsidy",
+    "topics": ["floriculture", "subsidy", "scheme", "jasmine", "eligibility", "application", "government scheme"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English", "Hindi"]
+  },
+  {
+    "name": "Ministry of Agriculture and Farmers Welfare",
+    "url": "https://agriwelfare.gov.in/",
+    "source_url": "https://agriwelfare.gov.in/",
+    "category": "horticulture_scheme",
+    "topics": ["agriculture", "horticulture", "floriculture", "subsidy", "scheme", "farmer welfare", "India"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "Farmer Portal - Government of India",
+    "url": "https://farmer.gov.in/",
+    "source_url": "https://farmer.gov.in/",
+    "category": "horticulture_scheme",
+    "topics": ["farmer", "scheme", "subsidy", "horticulture", "floriculture", "credit", "jasmine", "government India"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English", "Hindi"]
+  },
+  {
+    "name": "APEDA - Floriculture Export Promotion",
+    "url": "https://apeda.gov.in/apedawebsite/SubHead_Products/Floriculture.htm",
+    "source_url": "https://apeda.gov.in/",
+    "category": "market_information",
+    "topics": ["floriculture", "export", "jasmine", "loose flowers", "market", "APEDA", "India export"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": true,
+    "language": ["English"]
+  },
+  {
+    "name": "APEDA Main Portal",
+    "url": "https://apeda.gov.in/",
+    "source_url": "https://apeda.gov.in/",
+    "category": "market_information",
+    "topics": ["export", "floriculture", "flowers", "jasmine", "market", "APEDA", "agriculture export"],
+    "country": "India",
+    "priority": 2,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "Tamil Nadu Horticulture Department",
+    "url": "https://www.tnhorticulture.gov.in/",
+    "source_url": "https://www.tnhorticulture.gov.in/",
+    "category": "state_scheme",
+    "topics": ["Tamil Nadu", "floriculture", "jasmine", "subsidy", "state scheme", "TN horticulture", "mullai"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English", "Tamil"]
+  },
+  {
+    "name": "Karnataka State Department of Horticulture",
+    "url": "https://horticulture.kar.nic.in/",
+    "source_url": "https://horticulture.kar.nic.in/",
+    "category": "state_scheme",
+    "topics": ["Karnataka", "floriculture", "jasmine", "subsidy", "state scheme", "horticulture"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English", "Kannada"]
+  },
+  {
+    "name": "CIB&RC - Pesticide Approvals India",
+    "url": "https://cibrc.nic.in/",
+    "source_url": "https://cibrc.nic.in/",
+    "category": "pest_management",
+    "topics": ["pesticide", "insecticide", "horticulture", "approved pesticides", "registration", "jasmine", "CIB"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "PMKSY - Drip Irrigation Scheme",
+    "url": "https://pmksy.gov.in/",
+    "source_url": "https://pmksy.gov.in/",
+    "category": "irrigation",
+    "topics": ["drip irrigation", "micro irrigation", "horticulture", "PMKSY", "water", "floriculture", "subsidy"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "Agri Infra Fund",
+    "url": "https://agriinfra.dac.gov.in/",
+    "source_url": "https://agriinfra.dac.gov.in/",
+    "category": "agricultural_credit",
+    "topics": ["loan", "credit", "agricultural infrastructure", "cold storage", "floriculture", "subsidy"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "SFAC - Small Farmers Agribusiness Consortium",
+    "url": "https://www.sfacindia.com/",
+    "source_url": "https://www.sfacindia.com/",
+    "category": "agricultural_credit",
+    "topics": ["farmer", "credit", "horticulture", "floriculture", "small farmer", "scheme", "India"],
+    "country": "India",
+    "priority": 2,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "e-NAM - National Agriculture Market",
+    "url": "https://enam.gov.in/",
+    "source_url": "https://enam.gov.in/",
+    "category": "market_information",
+    "topics": ["e-NAM", "market", "flower", "jasmine", "mandi", "price", "loose flower", "online trading"],
+    "country": "India",
+    "priority": 2,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "Andhra Pradesh Horticulture Department",
+    "url": "https://horticulture.ap.gov.in/",
+    "source_url": "https://horticulture.ap.gov.in/",
+    "category": "state_scheme",
+    "topics": ["Andhra Pradesh", "floriculture", "jasmine", "subsidy", "state scheme", "horticulture AP"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English", "Telugu"]
+  },
+  {
+    "name": "Telangana Horticulture Department",
+    "url": "https://horticulture.telangana.gov.in/",
+    "source_url": "https://horticulture.telangana.gov.in/",
+    "category": "state_scheme",
+    "topics": ["Telangana", "floriculture", "jasmine", "subsidy", "state scheme", "horticulture"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English", "Telugu"]
+  },
+  {
+    "name": "Kerala Agriculture Department",
+    "url": "https://www.keralaagriculture.gov.in/",
+    "source_url": "https://www.keralaagriculture.gov.in/",
+    "category": "state_scheme",
+    "topics": ["Kerala", "horticulture", "floriculture", "jasmine", "scheme", "subsidy", "agriculture Kerala"],
+    "country": "India",
+    "priority": 2,
+    "is_deep_url": false,
+    "language": ["English", "Malayalam"]
+  },
+  {
+    "name": "ICAR-CCARI Goa",
+    "url": "https://ccari.res.in/",
+    "source_url": "https://ccari.res.in/",
+    "category": "jasmine_crop_practice",
+    "topics": ["jasmine", "crop advisory", "ICAR", "coastal farming", "horticulture", "Goa"],
+    "country": "India",
+    "priority": 1,
+    "is_deep_url": false,
+    "language": ["English"]
+  },
+  {
+    "name": "DBT India - Biotechnology for Agriculture",
+    "url": "https://dbtindia.gov.in/",
+    "source_url": "https://dbtindia.gov.in/",
+    "category": "jasmine_crop_practice",
+    "topics": ["biofertilizer", "horticulture", "floriculture", "jasmine", "organic", "DBT", "biotech"],
+    "country": "India",
+    "priority": 2,
+    "is_deep_url": false,
+    "language": ["English"]
+  }
+]

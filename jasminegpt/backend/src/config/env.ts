@@ -12,6 +12,7 @@ const envSchema = z.object({
   MONGODB_DB_NAME: z.string().default('jasminesathi_gpt'),
 
   RAG_SIDECAR_URL: z.string().default('http://localhost:8000'),
+  OFFICIAL_AGRICULTURAL_SERVICE_URL: z.string().default('http://127.0.0.1:8100'),
 
   LLM_PROVIDER: z.enum(['openrouter', 'gemini']).default('openrouter'),
   OPENROUTER_API_KEY: z.string().optional(),

@@ -5,6 +5,7 @@ import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import conversationRoutes from './routes/conversationRoutes';
 import chatRoutes from './routes/chatRoutes';
+import officialAgriculturalRoutes from './routes/officialAgriculturalRoutes';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.get('/health', (_req, res) => {
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/official-agricultural', officialAgriculturalRoutes);
 
 // ── 404 ──────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

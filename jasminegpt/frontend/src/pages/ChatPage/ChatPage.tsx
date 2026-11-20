@@ -3,6 +3,7 @@ import Sidebar from '../../components/Sidebar/Sidebar';
 import ChatWindow from '../../components/ChatWindow/ChatWindow';
 import { useConversations } from '../../hooks/useConversations';
 import type { Conversation } from '../../types';
+import OfficialAgriculturalPage from '../OfficialAgriculturalPage/OfficialAgriculturalPage';
 import './ChatPage.css';
 
 const SIDEBAR_COLLAPSED_KEY = 'jasminegpt_sidebar_collapsed';
@@ -27,6 +28,7 @@ export default function ChatPage() {
   const { conversations, createConversation, deleteConversation, refetch } =
     useConversations();
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
+  const [officialRetrievalActive, setOfficialRetrievalActive] = useState(false);
 
   // ── Desktop: collapsed icon-rail (persisted) ──────────────────────────────
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(readCollapsed);
@@ -62,6 +64,7 @@ export default function ChatPage() {
   }, []);
 
   const handleCreate = useCallback(async () => {
+    setOfficialRetrievalActive(false);
     const id = await createConversation();
     const conv: Conversation = { conversationId: id, title: 'New Chat' };
     setActiveConversation(conv);
@@ -70,6 +73,7 @@ export default function ChatPage() {
 
   const handleSelect = useCallback(
     (id: string) => {
+      setOfficialRetrievalActive(false);
       const conv = conversations.find((c) => c.conversationId === id);
       if (conv) {
         setActiveConversation(conv);
@@ -78,6 +82,11 @@ export default function ChatPage() {
     },
     [conversations]
   );
+
+  const handleOfficialRetrieval = useCallback(() => {
+    setOfficialRetrievalActive(true);
+    setSidebarOpen(false);
+  }, []);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -148,6 +157,8 @@ export default function ChatPage() {
           onSelect={handleSelect}
           onCreate={handleCreate}
           onDelete={handleDelete}
+          onOfficialRetrieval={handleOfficialRetrieval}
+          officialRetrievalActive={officialRetrievalActive}
           collapsed={sidebarCollapsed}
           onToggle={handleToggleSidebar}
         />
@@ -155,12 +166,16 @@ export default function ChatPage() {
 
       {/* ── Main chat area ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-        <ChatWindow
-          conversation={syncedActive}
-          onMessageSent={handleMessageSent}
-          onToggleSidebar={handleToggleSidebar}
-          onCreateConversation={handleCreate}
-        />
+        {officialRetrievalActive ? (
+          <OfficialAgriculturalPage />
+        ) : (
+          <ChatWindow
+            conversation={syncedActive}
+            onMessageSent={handleMessageSent}
+            onToggleSidebar={handleToggleSidebar}
+            onCreateConversation={handleCreate}
+          />
+        )}
       </div>
     </div>
   );

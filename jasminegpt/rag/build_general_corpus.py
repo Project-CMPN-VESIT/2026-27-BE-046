@@ -313,4 +313,8 @@ def build_and_save_corpus(
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
     out_dir = os.path.join(base_dir, "data")
-    build_and_save_corpus(output_dir=out_dir)
+    source_dir = os.getenv(
+        "RAG_SOURCE_PDF_DIR",
+        os.path.join(base_dir, "source_pdfs"),
+    )
+    build_and_save_corpus(downloads_dir=source_dir, output_dir=out_dir)

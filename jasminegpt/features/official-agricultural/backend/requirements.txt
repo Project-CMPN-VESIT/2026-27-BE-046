@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+requests
+beautifulsoup4
+python-dotenv
+sentence-transformers
+chromadb
+scikit-learn
+pymongo[srv]
+pandas
+faiss-cpu
